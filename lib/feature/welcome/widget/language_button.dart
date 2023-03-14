@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:whatsapp_clone/common/extension/custom_text_extension.dart';
 import 'package:whatsapp_clone/common/utils/coloors.dart';
+import 'package:whatsapp_clone/common/widget/custom_icon_button.dart';
 
 class LanguageButton extends StatelessWidget {
   const LanguageButton({
@@ -32,17 +33,9 @@ class LanguageButton extends StatelessWidget {
                   const SizedBox(
                     width: 20,
                   ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    splashColor: Colors.transparent,
-                    splashRadius: 22,
-                    iconSize: 22,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 40),
-                    icon: const Icon(
-                      Icons.close_outlined,
-                      color: Coloors.greyDark,
-                    ),
+                  CustomIconButton(
+                    onTap: () => Navigator.of(context).pop(),
+                    icon: Icons.close_outlined,
                   ),
                   const SizedBox(
                     width: 10,
@@ -81,7 +74,7 @@ class LanguageButton extends StatelessWidget {
                 groupValue: false,
                 onChanged: (value) {},
                 activeColor: Coloors.greenDark,
-                title: const Text('Japanese (Japan)'),
+                title: const Text('Iraqi Arabic'),
                 subtitle: Text(
                   "(phone's language)",
                   style: TextStyle(
