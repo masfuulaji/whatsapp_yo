@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:whatsapp_clone/common/extension/custom_text_extension.dart';
 import 'package:whatsapp_clone/common/helper/show_alert_dialog.dart';
@@ -9,19 +10,47 @@ import 'package:whatsapp_clone/common/utils/coloors.dart';
 import 'package:whatsapp_clone/common/widget/custom_elevated_button.dart';
 import 'package:whatsapp_clone/common/widget/custom_icon_button.dart';
 import 'package:whatsapp_clone/common/widget/short_h_bar.dart';
+import 'package:whatsapp_clone/feature/auth/controller/auth_controller.dart';
 import 'package:whatsapp_clone/feature/auth/pages/image_picker_page.dart';
 import 'package:whatsapp_clone/feature/auth/widget/custom_text_field.dart';
 
-class UserInfoPage extends StatefulWidget {
-  const UserInfoPage({super.key});
+class UserInfoPage extends ConsumerStatefulWidget {
+  const UserInfoPage({super.key, this.profileImageUrl});
+
+  final String? profileImageUrl;
 
   @override
-  State<UserInfoPage> createState() => _UserInfoPageState();
+  ConsumerState<UserInfoPage> createState() => _UserInfoPageState();
 }
 
-class _UserInfoPageState extends State<UserInfoPage> {
+class _UserInfoPageState extends ConsumerState<UserInfoPage> {
   File? imageCamera;
   Uint8List? imageGallery;
+
+  late TextEditingController usernameController;
+
+  saveUserDatatoFirebase() {
+    String username = usernameController.text;
+
+    if (username.isEmpty) {
+      showAlertDialog(context: context, message: 'Please enter username');
+      return;
+    }
+    if (username.length < 3 || username.length > 20) {
+      showAlertDialog(
+          context: context,
+          message: 'Username must be between 3 to 20 characters');
+      return;
+    }
+
+    ref.read(authControllerProvider).saveUserInfoToFirestore(
+          username: username,
+          profileImage:
+              imageCamera ?? imageGallery ?? widget.profileImageUrl ?? '',
+          context: context,
+          mounted: mounted,
+        );
+  }
 
   imagePickerTypeBottomSheet() {
     return showModalBottomSheet(
@@ -138,6 +167,18 @@ class _UserInfoPageState extends State<UserInfoPage> {
   }
 
   @override
+  void initState() {
+    usernameController = TextEditingController();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    usernameController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -175,12 +216,16 @@ class _UserInfoPageState extends State<UserInfoPage> {
                         ? Colors.transparent
                         : context.theme.greyColor!.withOpacity(0.4),
                   ),
-                  image: imageCamera != null || imageGallery != null
+                  image: imageCamera != null ||
+                          imageGallery != null ||
+                          widget.profileImageUrl != null
                       ? DecorationImage(
                           fit: BoxFit.cover,
                           image: imageGallery != null
-                              ? MemoryImage(imageGallery!) as ImageProvider
-                              : FileImage(imageCamera!),
+                              ? MemoryImage(imageGallery!)
+                              : widget.profileImageUrl != null
+                                  ? NetworkImage(widget.profileImageUrl!)
+                                  : FileImage(imageCamera!) as ImageProvider,
                         )
                       : null,
                 ),
@@ -189,7 +234,9 @@ class _UserInfoPageState extends State<UserInfoPage> {
                   child: Icon(
                     Icons.add_a_photo_rounded,
                     size: 48,
-                    color: imageCamera == null && imageGallery == null
+                    color: imageCamera == null &&
+                            imageGallery == null &&
+                            widget.profileImageUrl == null
                         ? context.theme.photoIconColor
                         : Colors.transparent,
                   ),
@@ -204,8 +251,9 @@ class _UserInfoPageState extends State<UserInfoPage> {
                 const SizedBox(
                   width: 20,
                 ),
-                const Expanded(
+                Expanded(
                   child: CustomTextField(
+                    controller: usernameController,
                     hintText: 'Type your name here',
                     textAlign: TextAlign.left,
                     autoFocus: true,
@@ -228,7 +276,7 @@ class _UserInfoPageState extends State<UserInfoPage> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: CustomElevatedButton(
-        onPressed: () {},
+        onPressed: saveUserDatatoFirebase,
         text: 'Next',
         buttonWidth: 90,
       ),
